@@ -1,2 +1,2 @@
-echo "Ce script a été modifié pour relancer Jenkins automatiquement"
+echo "Ce script a été modifié pour LOCATUNNEL relancer Jenkins automatiquement"
 
