@@ -1,0 +1,1 @@
+Script Jenkins déclenché automatiquement
