@@ -56,11 +56,12 @@ pipeline {
 }
 
 
-        stage('Run K6 tests') {
-            steps {
-                bat 'k6 run k6/script.js'
-            }
-        }
+     stage('Run K6 tests') {
+    steps {
+        bat 'k6 run test_k6.js'
+    }
+}
+
     }
 
     post {
