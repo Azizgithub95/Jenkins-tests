@@ -17,5 +17,15 @@ pipeline {
                 echo 'On lance les tests...'
             }
         }
+
+stage('Newman - Postman Tests') {
+    steps {
+        echo 'Lancement des tests Postman avec Newman...'
+        sh 'newman run "MOCK AZIZ SERVEUR.postman_collection.json"'
+    }
+}
+
+
+
     }
 }
