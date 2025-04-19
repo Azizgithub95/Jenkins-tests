@@ -31,17 +31,18 @@ pipeline {
             }
         }
 
-        stage('Generate Cypress report') {
+              stage('Generate Cypress report') {
             steps {
                 bat '''
                 echo Fusion des rapports JSON et génération HTML...
-                npx mochawesome-merge reports/mochawesome/*.json > reports/mochawesome/merged.json
+                npx mochawesome-merge reports/mochawesome/*.json --output reports/mochawesome/merged.json
                 npx marge reports/mochawesome/merged.json ^
                     --reportDir reports/mochawesome ^
                     --reportFilename cypress-report
                 '''
             }
         }
+
 
         stage('Run Newman tests') {
             steps {
