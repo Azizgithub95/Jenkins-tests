@@ -29,7 +29,7 @@ pipeline {
 
         stage('Cypress') {
             steps {
-                echo 'Lancement des tests Cypress...'
+                echo 'Lancement des tests 1 Cypress...'
                 bat 'npm install'
                 bat 'npm run cypress:run'
             }
