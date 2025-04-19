@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Préparation') {
             steps {
-                echo 'On prépare le build...'
+                echo 'On prépare le 1ER build...'
             }
         }
         stage('Build') {
