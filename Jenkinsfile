@@ -15,7 +15,7 @@ pipeline {
         stage('Install dependencies') {
             steps {
                 bat 'npm install'
-                bat 'npm install --save-dev mochawesome mochawesome-merge mochawesome-report-generator'
+                bat 'npm install --save-dev mochawesome mochawesome-report-generator'
                 bat 'npm install -g newman newman-reporter-html'
             }
         }
@@ -25,25 +25,19 @@ pipeline {
                 bat '''
                     npx cypress run ^
                         --reporter mochawesome ^
-                        --reporter-options reportDir=reports\\mochawesome,overwrite=false,html=false,json=true
+                        --reporter-options reportDir=reports\\mochawesome,overwrite=true,html=true,json=true
                 '''
             }
         }
 
-        stage('Generate Cypress report') {
+        stage('Check Cypress report') {
             steps {
                 bat '''
-                    echo Listing JSON files:
-                    dir reports\\mochawesome
-
-                    timeout /t 2 > nul
-
-                    if exist reports\\mochawesome\\*.json (
-                        echo JSON file found, merging...
-                        npx mochawesome-merge "reports/mochawesome/*.json" > reports/mochawesome/merged.json
-                        npx marge reports/mochawesome/merged.json --reportDir reports/mochawesome --reportFilename cypress-report
+                    echo Vérification du rapport Cypress...
+                    if exist reports\\mochawesome\\*.html (
+                        echo ✅ Rapport Cypress généré avec succès.
                     ) else (
-                        echo ERROR: No mochawesome JSON files found!
+                        echo ❌ Aucun rapport Cypress trouvé !
                         exit /b 1
                     )
                 '''
@@ -53,21 +47,28 @@ pipeline {
         stage('Run Newman tests') {
             steps {
                 bat '''
-                    newman run collection.json -r html --reporter-html-export reports\\newman\\newman-report.html
+                    echo Exécution des tests Newman...
+                    newman run tests\\collection.json ^
+                        -e tests\\environment.json ^
+                        -r html ^
+                        --reporter-html-export reports\\newman\\newman-report.html
                 '''
             }
         }
 
         stage('Run K6 tests') {
             steps {
-                bat 'k6 run --summary-export=reports\\k6\\summary.json k6-script.js'
+                bat '''
+                    echo Exécution des tests K6...
+                    k6 run tests\\script.js
+                '''
             }
         }
     }
 
     post {
         always {
-            echo 'Tests exécutés. Vérifie les rapports dans le dossier reports/.'
+            echo 'Pipeline terminé. Vérifie le dossier "reports/" pour les résultats.'
         }
     }
 }
