@@ -20,16 +20,19 @@ pipeline {
             }
         }
 
-        stage('Generate Cypress report') {
-            steps {
-                bat '''
-                npx mochawesome-merge reports\\mochawesome\\*.json > reports\\mochawesome\\merged.json
-                npx marge reports\\mochawesome\\merged.json ^
-                  --reportDir reports\\mochawesome ^
-                  --reportFilename cypress-report
-                '''
-            }
-        }
+     stage('Generate Cypress report') {
+    steps {
+        bat '''
+        for %%f in (reports\\mochawesome\\*.json) do (
+            type "%%f" >> reports\\mochawesome\\merged.json
+        )
+        npx marge reports\\mochawesome\\merged.json ^
+            --reportDir reports\\mochawesome ^
+            --reportFilename cypress-report
+        '''
+    }
+}
+
 
         stage('Run Newman tests') {
             steps {
