@@ -1,7 +1,17 @@
 pipeline {
     agent any
 
+    environment {
+        REPORTS_DIR = "reports"
+    }
+
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Install dependencies') {
             steps {
                 bat 'npm install'
@@ -20,40 +30,35 @@ pipeline {
             }
         }
 
-     stage('Generate Cypress report') {
-    steps {
-        bat '''
-        for %%f in (reports\\mochawesome\\*.json) do (
-            type "%%f" >> reports\\mochawesome\\merged.json
-        )
-        npx marge reports\\mochawesome\\merged.json ^
-            --reportDir reports\\mochawesome ^
-            --reportFilename cypress-report
-        '''
-    }
-}
-
+        stage('Generate Cypress report') {
+            steps {
+                bat '''
+                npx mochawesome-merge reports\\mochawesome\\*.json > reports\\mochawesome\\merged.json
+                npx marge reports\\mochawesome\\merged.json --reportDir reports\\mochawesome --reportFilename cypress-report
+                '''
+            }
+        }
 
         stage('Run Newman tests') {
             steps {
                 bat '''
-                newman run postman\\collection.json ^
-                  -r html ^
-                  --reporter-html-export reports\\newman-report.html
+                newman run "MOCK AZIZ SERVEUR.postman_collection.json" ^
+                  -r cli,html ^
+                  --reporter-html-export reports\\newman\\newman-report.html
                 '''
             }
         }
 
         stage('Run K6 tests') {
             steps {
-                bat 'k6 run k6\\test_k6.js'
+                bat 'npm run test:k6'
             }
         }
     }
 
     post {
         always {
-            echo 'Tests exécutés. Vérifie les rapports dans le dossier reports/.'
+            echo "Tests exécutés. Vérifie les rapports dans le dossier reports/."
         }
     }
 }
