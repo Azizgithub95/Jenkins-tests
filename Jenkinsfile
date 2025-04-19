@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        REPORTS_DIR = "reports"
+        PATH = "${env.PATH};C:\\Program Files\\nodejs"
     }
 
     stages {
@@ -33,8 +33,19 @@ pipeline {
         stage('Generate Cypress report') {
             steps {
                 bat '''
-                npx mochawesome-merge reports\\mochawesome\\*.json > reports\\mochawesome\\merged.json
-                npx marge reports\\mochawesome\\merged.json --reportDir reports\\mochawesome --reportFilename cypress-report
+                echo Listing JSON files:
+                dir reports\\mochawesome
+
+                timeout /t 3 > nul
+
+                if exist reports\\mochawesome\\*.json (
+                    echo JSON file found, merging...
+                    npx mochawesome-merge reports\\mochawesome\\*.json > reports\\mochawesome\\merged.json
+                    npx marge reports\\mochawesome\\merged.json --reportDir reports\\mochawesome --reportFilename cypress-report
+                ) else (
+                    echo ERROR: No mochawesome JSON files found!
+                    exit /b 1
+                )
                 '''
             }
         }
@@ -42,23 +53,24 @@ pipeline {
         stage('Run Newman tests') {
             steps {
                 bat '''
-                newman run "MOCK AZIZ SERVEUR.postman_collection.json" ^
-                  -r cli,html ^
-                  --reporter-html-export reports\\newman\\newman-report.html
+                newman run tests\\postman\\collection.json ^
+                    -e tests\\postman\\env.json ^
+                    -r html ^
+                    --reporter-html-export reports\\newman\\newman-report.html
                 '''
             }
         }
 
         stage('Run K6 tests') {
             steps {
-                bat 'npm run test:k6'
+                bat 'k6 run tests\\k6\\script.js'
             }
         }
     }
 
     post {
         always {
-            echo "Tests exécutés. Vérifie les rapports dans le dossier reports/."
+            echo 'Tests exécutés. Vérifie les rapports dans le dossier reports/.'
         }
     }
 }
