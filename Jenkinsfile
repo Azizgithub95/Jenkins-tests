@@ -2,10 +2,11 @@ pipeline {
     agent any
 
     environment {
-        PATH = "${tool 'NodeJS 22.2.0'}/bin:${env.PATH}"
+        PATH = "${env.PATH};C:\\Program Files\\nodejs\\"
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -15,7 +16,7 @@ pipeline {
         stage('Install dependencies') {
             steps {
                 bat 'npm install'
-                bat 'npm install --save-dev mochawesome mochawesome-report-generator'
+                bat 'npm install --save-dev mochawesome mochawesome-merge mochawesome-report-generator'
                 bat 'npm install -g newman newman-reporter-html'
             }
         }
@@ -23,23 +24,21 @@ pipeline {
         stage('Run Cypress tests') {
             steps {
                 bat '''
-                    npx cypress run ^
-                        --reporter mochawesome ^
-                        --reporter-options reportDir=reports\\mochawesome,overwrite=true,html=true,json=true
+                npx cypress run ^
+                  --reporter mochawesome ^
+                  --reporter-options reportDir=reports/mochawesome,overwrite=false,html=false,json=true
                 '''
             }
         }
 
-        stage('Check Cypress report') {
+        stage('Generate Cypress report') {
             steps {
                 bat '''
-                    echo Vérification du rapport Cypress...
-                    if exist reports\\mochawesome\\*.html (
-                        echo ✅ Rapport Cypress généré avec succès.
-                    ) else (
-                        echo ❌ Aucun rapport Cypress trouvé !
-                        exit /b 1
-                    )
+                echo Fusion des rapports JSON et génération HTML...
+                npx mochawesome-merge reports/mochawesome/*.json > reports/mochawesome/merged.json
+                npx marge reports/mochawesome/merged.json ^
+                    --reportDir reports/mochawesome ^
+                    --reportFilename cypress-report
                 '''
             }
         }
@@ -47,28 +46,23 @@ pipeline {
         stage('Run Newman tests') {
             steps {
                 bat '''
-                    echo Exécution des tests Newman...
-                    newman run tests\\collection.json ^
-                        -e tests\\environment.json ^
-                        -r html ^
-                        --reporter-html-export reports\\newman\\newman-report.html
+                newman run postman/collection.json ^
+                    -r cli,html ^
+                    --reporter-html-export reports/newman/report.html
                 '''
             }
         }
 
         stage('Run K6 tests') {
             steps {
-                bat '''
-                    echo Exécution des tests K6...
-                    k6 run tests\\script.js
-                '''
+                bat 'k6 run k6/script.js'
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline terminé. Vérifie le dossier "reports/" pour les résultats.'
+            echo 'Tests exécutés. Vérifie les rapports dans le dossier reports/.'
         }
     }
 }
