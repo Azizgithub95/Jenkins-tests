@@ -2,42 +2,55 @@ pipeline {
     agent any
 
     stages {
-        stage('Préparation') {
+        stage('Install dependencies') {
             steps {
-                echo 'On prépare le 1ER build...'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                echo 'On build...'
-            }
-        }
-
-        stage('Tests') {
-            steps {
-                echo 'On lance les tests...'
-            }
-        }
-
-        stage('Newman - Postman Tests') {
-            steps {
-                echo 'Lancement des tests Postman avec Newman...'
-                bat 'newman run "MOCK AZIZ SERVEUR.postman_collection.json"'
-            }
-        }
-          stage('K6 - Performance Testing') {
-            steps {
-                echo 'Lancement du test de performance avec K6...'
-                bat 'npm run test:k6'
-            }
-        }
-        stage('Cypress') {
-            steps {
-                echo 'Lancement des tests 1 Cypress...'
                 bat 'npm install'
-                bat 'npm run cypress:run'
+                bat 'npm install --save-dev mochawesome mochawesome-merge mochawesome-report-generator'
+                bat 'npm install -g newman newman-reporter-html'
             }
+        }
+
+        stage('Run Cypress tests') {
+            steps {
+                bat '''
+                npx cypress run ^
+                  --reporter mochawesome ^
+                  --reporter-options reportDir=reports\\mochawesome,overwrite=false,html=false,json=true
+                '''
+            }
+        }
+
+        stage('Generate Cypress report') {
+            steps {
+                bat '''
+                npx mochawesome-merge reports\\mochawesome\\*.json > reports\\mochawesome\\merged.json
+                npx marge reports\\mochawesome\\merged.json ^
+                  --reportDir reports\\mochawesome ^
+                  --reportFilename cypress-report
+                '''
+            }
+        }
+
+        stage('Run Newman tests') {
+            steps {
+                bat '''
+                newman run postman\\collection.json ^
+                  -r html ^
+                  --reporter-html-export reports\\newman-report.html
+                '''
+            }
+        }
+
+        stage('Run K6 tests') {
+            steps {
+                bat 'k6 run k6\\test_k6.js'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Tests exécutés. Vérifie les rapports dans le dossier reports/.'
         }
     }
 }
