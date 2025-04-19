@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PATH = "${env.PATH};C:\\Program Files\\nodejs"
+        PATH = "${tool 'NodeJS 22.2.0'}/bin:${env.PATH}"
     }
 
     stages {
@@ -23,9 +23,9 @@ pipeline {
         stage('Run Cypress tests') {
             steps {
                 bat '''
-                npx cypress run ^
-                  --reporter mochawesome ^
-                  --reporter-options reportDir=reports\\mochawesome,overwrite=false,html=false,json=true
+                    npx cypress run ^
+                        --reporter mochawesome ^
+                        --reporter-options reportDir=reports\\mochawesome,overwrite=false,html=false,json=true
                 '''
             }
         }
@@ -33,19 +33,19 @@ pipeline {
         stage('Generate Cypress report') {
             steps {
                 bat '''
-                echo Listing JSON files:
-                dir reports\\mochawesome
+                    echo Listing JSON files:
+                    dir reports\\mochawesome
 
-                timeout /t 3 > nul
+                    timeout /t 2 > nul
 
-                if exist reports\\mochawesome\\*.json (
-                    echo JSON file found, merging...
-                    npx mochawesome-merge reports\\mochawesome\\*.json > reports\\mochawesome\\merged.json
-                    npx marge reports\\mochawesome\\merged.json --reportDir reports\\mochawesome --reportFilename cypress-report
-                ) else (
-                    echo ERROR: No mochawesome JSON files found!
-                    exit /b 1
-                )
+                    if exist reports\\mochawesome\\*.json (
+                        echo JSON file found, merging...
+                        npx mochawesome-merge "reports/mochawesome/*.json" > reports/mochawesome/merged.json
+                        npx marge reports/mochawesome/merged.json --reportDir reports/mochawesome --reportFilename cypress-report
+                    ) else (
+                        echo ERROR: No mochawesome JSON files found!
+                        exit /b 1
+                    )
                 '''
             }
         }
@@ -53,17 +53,14 @@ pipeline {
         stage('Run Newman tests') {
             steps {
                 bat '''
-                newman run tests\\postman\\collection.json ^
-                    -e tests\\postman\\env.json ^
-                    -r html ^
-                    --reporter-html-export reports\\newman\\newman-report.html
+                    newman run collection.json -r html --reporter-html-export reports\\newman\\newman-report.html
                 '''
             }
         }
 
         stage('Run K6 tests') {
             steps {
-                bat 'k6 run tests\\k6\\script.js'
+                bat 'k6 run --summary-export=reports\\k6\\summary.json k6-script.js'
             }
         }
     }
