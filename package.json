@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "cypress:run": "cypress run"
+    "cypress:run": "cypress run",
+    "test:k6": "k6 run test_k6.js"
   },
   "repository": {
     "type": "git",

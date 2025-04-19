@@ -26,7 +26,12 @@ pipeline {
                 bat 'newman run "MOCK AZIZ SERVEUR.postman_collection.json"'
             }
         }
-
+          stage('K6 - Performance Testing') {
+            steps {
+                echo 'Lancement du test de performance avec K6...'
+                bat 'npm run test:k6'
+            }
+        }
         stage('Cypress') {
             steps {
                 echo 'Lancement des tests 1 Cypress...'
