@@ -3,23 +3,28 @@ describe("Mon premier test", () => {
     // Aller sur Google
     cy.visit("https://www.google.com");
 
-    // Attendre un peu que la page charge (utile en headless / Jenkins)
+    // Attendre un peu que la page charge
     cy.wait(2000);
 
-    // Fermer le message de consentement si présent (RGPD)
+    // Gérer le consentement RGPD si visible
     cy.get("body").then(($body) => {
       if ($body.find('button:contains("J’accepte")').length > 0) {
         cy.contains("J’accepte").click({ force: true });
+      } else if ($body.find('button:contains("Tout accepter")').length > 0) {
+        cy.contains("Tout accepter").click({ force: true });
       }
     });
 
-    // Vérifie que la barre de recherche est présente, avec un timeout plus long
+    // Attendre à nouveau un peu après consentement
+    cy.wait(2000);
+
+    // Trouver la barre de recherche
     cy.get('input[name="q"]', { timeout: 10000 }).should("be.visible");
 
-    // Tape du texte
+    // Entrer une recherche
     cy.get('input[name="q"]').type("Jenkins{enter}");
 
-    // Vérifie que les résultats apparaissent
+    // Vérifier que les résultats apparaissent
     cy.get("#search", { timeout: 10000 }).should("exist");
   });
 });
