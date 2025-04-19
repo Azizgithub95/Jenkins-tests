@@ -44,15 +44,16 @@ pipeline {
         }
 
 
-        stage('Run Newman tests') {
-            steps {
-                bat '''
-                newman run postman/collection.json ^
-                    -r cli,html ^
-                    --reporter-html-export reports/newman/report.html
-                '''
-            }
-        }
+       stage('Run Newman tests') {
+    steps {
+        bat '''
+        newman run MOCK_AZIZ_SERVEUR.postman_collection.json ^
+            -r cli,html ^
+            --reporter-html-export reports/newman/report.html
+        '''
+    }
+}
+
 
         stage('Run K6 tests') {
             steps {
