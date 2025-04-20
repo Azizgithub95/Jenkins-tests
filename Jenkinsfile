@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        PATH = "${env.PATH};C:\\Program Files\\nodejs"
+    }
+
     stages {
         stage('Install dependencies') {
             steps {
@@ -28,8 +32,9 @@ pipeline {
         stage('Run Newman tests') {
             steps {
                 bat 'echo ---[ DEBUG: Before Newman ]---'
-                bat 'mkdir reports\\newman'
+                bat 'if not exist reports\\newman mkdir reports\\newman'
                 bat 'newman run MOCK_AZIZ_SERVEUR.postman_collection.json -r cli,html --reporter-html-export reports\\newman\\report.html'
+                bat 'echo [INFO] Newman finished.'
             }
         }
 
