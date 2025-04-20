@@ -1,11 +1,11 @@
 {
   "stats": {
-    "suites": 1,
-    "tests": 1,
-    "passes": 1,
+    "suites": 2,
+    "tests": 2,
+    "passes": 2,
     "pending": 0,
     "failures": 0,
-    "testsRegistered": 1,
+    "testsRegistered": 2,
     "passPercent": 100,
     "pendingPercent": 0,
     "other": 0,
@@ -13,8 +13,8 @@
     "skipped": 0,
     "hasSkipped": false,
     "start": "2025-04-19T22:29:49.477Z",
-    "end": "2025-04-19T22:29:52.407Z",
-    "duration": 2930
+    "end": "2025-04-20T00:23:04.372Z",
+    "duration": 6794895
   },
   "results": [
     {
@@ -61,6 +61,64 @@
           "pending": [],
           "skipped": [],
           "duration": 1118,
+          "root": false,
+          "rootEmpty": false,
+          "_timeout": 2000
+        }
+      ],
+      "passes": [],
+      "failures": [],
+      "pending": [],
+      "skipped": [],
+      "duration": 0,
+      "root": true,
+      "rootEmpty": true,
+      "_timeout": 2000
+    },
+    {
+      "uuid": "5b824c10-b815-40c3-bd7c-2a9c816f5a9e",
+      "title": "",
+      "fullFile": "cypress\\e2e\\test_jenkins.cy.js",
+      "file": "cypress\\e2e\\test_jenkins.cy.js",
+      "beforeHooks": [],
+      "afterHooks": [],
+      "tests": [],
+      "suites": [
+        {
+          "uuid": "249c2641-bc0c-4a4b-92d6-5acd48ca5e46",
+          "title": "Test de démo sur example.cypress.io",
+          "fullFile": "",
+          "file": "",
+          "beforeHooks": [],
+          "afterHooks": [],
+          "tests": [
+            {
+              "title": "Remplit un champ et vérifie le résultat",
+              "fullTitle": "Test de démo sur example.cypress.io Remplit un champ et vérifie le résultat",
+              "timedOut": null,
+              "duration": 579,
+              "state": "passed",
+              "speed": "fast",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "cy.visit(\"https://example.cypress.io/commands/actions\");\n// Tape du texte dans un champ\ncy.get(\".action-email\").type(\"aziz@example.com\");\n// Vérifie que le champ contient bien ce qu’on a tapé\ncy.get(\".action-email\").should(\"have.value\", \"aziz@example.com\");",
+              "err": {},
+              "uuid": "5848bcfd-a092-4bfd-82b0-76e95bd56ed8",
+              "parentUUID": "249c2641-bc0c-4a4b-92d6-5acd48ca5e46",
+              "isHook": false,
+              "skipped": false
+            }
+          ],
+          "suites": [],
+          "passes": [
+            "5848bcfd-a092-4bfd-82b0-76e95bd56ed8"
+          ],
+          "failures": [],
+          "pending": [],
+          "skipped": [],
+          "duration": 579,
           "root": false,
           "rootEmpty": false,
           "_timeout": 2000
