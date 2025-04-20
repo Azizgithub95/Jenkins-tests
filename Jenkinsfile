@@ -49,7 +49,7 @@ pipeline {
                 stage('K6 (screenshot)') {
                     steps {
                         echo '--- RUN K6 (export + screenshot) ---'
-                        bt 'if not exist reports\\k6 mkdir reports\\k6'
+                        bat 'if not exist reports\\k6 mkdir reports\\k6'
                         bat 'k6 run test_k6.js --summary-export=reports\\k6\\summary.json'
                         bat 'python generate_k6_screenshot.py reports\\k6\\summary.json reports\\k6\\screenshot.png'
                         bat 'dir reports\\k6'
