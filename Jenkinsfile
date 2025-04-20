@@ -6,7 +6,6 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
@@ -24,41 +23,45 @@ pipeline {
         stage('Run Cypress tests') {
             steps {
                 bat '''
-                mkdir reports\\mochawesome
-                echo Running Cypress tests...
+                echo ---[ DEBUG: Current directory ]---
+                cd
+                echo ---[ DEBUG: Before Cypress ]---
+                dir
                 npx cypress run ^
                   --reporter mochawesome ^
-                  --reporter-options reportDir=reports/mochawesome,overwrite=true,html=false,json=true
+                  --reporter-options reportDir=reports\\mochawesome,overwrite=false,html=false,json=true
+                echo ---[ DEBUG: After Cypress run ]---
+                dir reports\\mochawesome
                 '''
-                bat 'dir reports\\mochawesome'
             }
         }
 
         stage('Generate Cypress report') {
             steps {
                 bat '''
-                echo Merging Cypress JSON reports...
-                npx mochawesome-merge reports/mochawesome/*.json --output reports/mochawesome/merged.json
-
-                echo Génération du rapport HTML Cypress...
-                npx marge reports/mochawesome/merged.json ^
-                    --reportDir reports/mochawesome ^
-                    --reportFilename cypress-report.html
+                echo Fusion des rapports JSON et génération HTML...
+                dir reports\\mochawesome
+                npx mochawesome-merge reports\\mochawesome\\*.json --output reports\\mochawesome\\merged.json
+                npx marge reports\\mochawesome\\merged.json ^
+                    --reportDir reports\\mochawesome ^
+                    --reportFilename cypress-report
+                echo ---[ DEBUG: After marge ]---
+                dir reports\\mochawesome
                 '''
-                bat 'dir reports\\mochawesome'
             }
         }
 
         stage('Run Newman tests') {
             steps {
                 bat '''
-                mkdir reports\\newman
-                echo Lancement des tests Newman...
+                echo ---[ DEBUG: Before Newman ]---
+                dir
                 newman run MOCK_AZIZ_SERVEUR.postman_collection.json ^
                     -r cli,html ^
-                    --reporter-html-export reports/newman/report.html
+                    --reporter-html-export reports\\newman\\report.html
+                echo ---[ DEBUG: After Newman ]---
+                dir reports\\newman
                 '''
-                bat 'dir reports\\newman'
             }
         }
 
