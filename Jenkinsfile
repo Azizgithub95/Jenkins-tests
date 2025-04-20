@@ -24,32 +24,39 @@ pipeline {
         stage('Run Cypress tests') {
             steps {
                 bat '''
+                echo ===== RUNNING CYPRESS TESTS =====
                 npx cypress run ^
                   --reporter mochawesome ^
-                  --reporter-options reportDir=reports/mochawesome,overwrite=false,html=false,json=true
+                  --reporter-options reportDir=reports/mochawesome,overwrite=true,html=false,json=true
+                dir reports\\mochawesome
                 '''
             }
         }
 
-       stage('Generate Cypress report') {
-    steps {
-        bat '''
-        echo Fusion des rapports JSON et génération HTML...
-        npx mochawesome-merge reports/mochawesome/*.json --output reports/mochawesome/merged.json
-        npx marge reports/mochawesome/merged.json ^
-            --reportDir reports/mochawesome ^
-            --reportFilename cypress-report.html
-        '''
-    }
-}
-
+        stage('Generate Cypress report') {
+            steps {
+                bat '''
+                echo ===== FUSION RAPPORTS CYPRESS & HTML =====
+                dir reports\\mochawesome
+                npx mochawesome-merge reports/mochawesome/*.json --output reports/mochawesome/merged.json
+                type reports\\mochawesome\\merged.json
+                npx marge reports/mochawesome/merged.json ^
+                    --reportDir reports/mochawesome ^
+                    --reportFilename cypress-report.html
+                dir reports\\mochawesome
+                '''
+            }
+        }
 
         stage('Run Newman tests') {
             steps {
                 bat '''
+                echo ===== RUNNING NEWMAN TESTS =====
+                mkdir reports\\newman
                 newman run MOCK_AZIZ_SERVEUR.postman_collection.json ^
                     -r cli,html ^
                     --reporter-html-export reports/newman/report.html
+                dir reports\\newman
                 '''
             }
         }
@@ -63,7 +70,7 @@ pipeline {
 
     post {
         always {
-            echo 'Tests exécutés. Vérifie les rapports dans le dossier reports/.'
+            echo '✅ Tous les tests ont été exécutés. Vérifie les rapports dans le dossier reports/.'
         }
     }
 }
