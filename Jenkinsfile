@@ -1,4 +1,4 @@
-                                                          pipeline {
+pipeline {
   agent any
 
   stages {
@@ -19,20 +19,12 @@
         stage('Cypress') {
           steps {
             echo '--- RUN Cypress ---'
-            // on génère un seul index.html avec assets inline
-            bat """
-              npx cypress run ^
-                --reporter mochawesome ^
-                --reporter-options ^
-reportDir=reports\\\\cypress,^
-reportFilename=index,^
-overwrite=true,^
-html=true,^
-json=false,^
-inlineAssets=true
-            """
-            // vérifions bien qu'on a index.html
-            bat 'dir reports\\\\cypress'
+            bat '''
+              npx cypress run \
+                --reporter mochawesome \
+                --reporter-options reportDir=reports/cypress,reportFilename=index,overwrite=true,html=true,json=false,inlineAssets=true
+            '''
+            bat 'dir reports\\cypress'
           }
         }
 
@@ -40,12 +32,12 @@ inlineAssets=true
           steps {
             echo '--- RUN Newman ---'
             bat 'if not exist reports\\newman mkdir reports\\newman'
-            bat """
-              newman run MOCK_AZIZ_SERVEUR.postman_collection.json ^
-                -r html ^
-                --reporter-html-export reports\\\\newman\\\\newman-report.html
-            """
-            bat 'dir reports\\\\newman'
+            bat '''
+              newman run MOCK_AZIZ_SERVEUR.postman_collection.json \
+                -r html \
+                --reporter-html-export reports/newman/newman-report.html
+            '''
+            bat 'dir reports\\newman'
           }
         }
 
@@ -60,7 +52,6 @@ inlineAssets=true
 
     stage('Publish HTML reports') {
       steps {
-        // Cypress → on pointe sur index.html
         publishHTML([
           reportDir             : 'reports/cypress',
           reportFiles           : 'index.html',
@@ -69,7 +60,6 @@ inlineAssets=true
           alwaysLinkToLastBuild : true,
           allowMissing          : false
         ])
-        // Newman
         publishHTML([
           reportDir             : 'reports/newman',
           reportFiles           : 'newman-report.html',
@@ -84,7 +74,7 @@ inlineAssets=true
 
   post {
     always {
-      echo 'Build terminé'
+      echo 'Build terminé.'
     }
   }
 }
