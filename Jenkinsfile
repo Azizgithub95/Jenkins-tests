@@ -31,37 +31,33 @@ pipeline {
             }
         }
 
-              stage('Generate Cypress report') {
+        stage('Generate Cypress report') {
             steps {
                 bat '''
                 echo Fusion des rapports JSON et génération HTML...
                 npx mochawesome-merge reports/mochawesome/*.json --output reports/mochawesome/merged.json
-                npx marge reports/mochawesome/merged.json ^
+                npx mochawesome-report-generator reports/mochawesome/merged.json ^
                     --reportDir reports/mochawesome ^
-                    --reportFilename cypress-report
+                    --reportFilename cypress-report.html
                 '''
             }
         }
 
+        stage('Run Newman tests') {
+            steps {
+                bat '''
+                newman run MOCK_AZIZ_SERVEUR.postman_collection.json ^
+                    -r cli,html ^
+                    --reporter-html-export reports/newman/report.html
+                '''
+            }
+        }
 
-       stage('Run Newman tests') {
-    steps {
-        bat '''
-    newman run MOCK_AZIZ_SERVEUR.postman_collection.json ^
-        -r cli,html ^
-        --reporter-html-export reports/newman/report.html
-'''
-
-    }
-}
-
-
-     stage('Run K6 tests') {
-    steps {
-        bat 'k6 run test_k6.js'
-    }
-}
-
+        stage('Run K6 tests') {
+            steps {
+                bat 'k6 run test_k6.js'
+            }
+        }
     }
 
     post {
