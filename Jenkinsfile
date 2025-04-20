@@ -53,7 +53,7 @@ reportDir=reports\\\\cypress,reportFilename=index,overwrite=true,html=true,json=
             echo '--- RUN K6 (export + screenshot) ---'
             bat 'if not exist reports\\k6 mkdir reports\\k6'
             bat 'k6 run test_k6.js --summary-export=reports\\k6\\summary.json'
-            // génère le PNG à partir du JSON
+            // gén ère le PNG à partir du JSON
             bat 'python generate_k6_screenshot.py reports\\k6\\summary.json reports\\k6\\screenshot.png'
             bat 'dir reports\\k6'
           }
