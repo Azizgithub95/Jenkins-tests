@@ -35,6 +35,7 @@ pipeline {
           steps {
             bat """
               echo ---[ DEBUG: Cypress ]---
+              if not exist ${REPORTS_DIR}\\mochawesome mkdir ${REPORTS_DIR}\\mochawesome
               npx cypress run ^
                 --reporter mochawesome ^
                 --reporter-options reportDir=${REPORTS_DIR}\\mochawesome,overwrite=false,html=false,json=true
@@ -65,11 +66,12 @@ pipeline {
       }
     }
 
-    stage('Generate Reports') {
+    stage('Generate Cypress Report') {
       steps {
         bat """
           echo Fusion et génération du rapport Cypress…
-          npx mochawesome-merge ${REPORTS_DIR}\\mochawesome\\*.json --output ${REPORTS_DIR}\\mochawesome\\merged.json
+          REM on utilise des slashs pour le wildcard
+          npx mochawesome-merge "${REPORTS_DIR}/mochawesome/*.json" --output ${REPORTS_DIR}\\mochawesome\\merged.json
           npx marge ${REPORTS_DIR}\\mochawesome\\merged.json ^
             --reportDir ${REPORTS_DIR}\\mochawesome ^
             --reportFilename cypress-report.html
@@ -94,7 +96,6 @@ pipeline {
         alwaysLinkToLastBuild : true
       ]
     }
-
     failure {
       echo '❌ Un ou plusieurs tests ont échoué.'
     }
