@@ -18,52 +18,62 @@ pipeline {
       parallel {
         stage('Cypress') {
           steps {
-            echo '---[ DEBUG: Cypress ]---'
-            // génère à la fois HTML et JSON dans reports\mochawesome
+            echo '--- DEBUG: Cypress ---'
             bat """
               npx cypress run ^
                 --reporter mochawesome ^
-                --reporter-options reportDir=reports\\mochawesome,reportFilename=cypress-report,overwrite=true,html=true,json=true
+                --reporter-options reportDir=reports/mochawesome,overwrite=false,html=true,json=true
             """
           }
         }
 
         stage('Newman') {
           steps {
-            echo '---[ DEBUG: Newman ]---'
+            echo '--- DEBUG: Newman ---'
             bat 'if not exist reports\\newman mkdir reports\\newman'
-            bat 'newman run MOCK_AZIZ_SERVEUR.postman_collection.json -r html --reporter-html-export reports\\newman\\newman-report.html'
+            bat 'newman run MOCK_AZIZ_SERVEUR.postman_collection.json -r cli,html --reporter-html-export reports\\newman\\newman-report.html'
           }
         }
 
-        // on exécute K6 SANS rapport
         stage('K6') {
           steps {
-            echo '---[ DEBUG: K6 ]---'
+            echo '--- DEBUG: K6 ---'
+            // on exécute juste, sans produire de rapport
             bat 'k6 run test_k6.js'
           }
         }
       }
     }
 
-    stage('Publish Reports') {
+    stage('Generate Cypress HTML') {
       steps {
-        echo '📂 Publication du rapport Cypress…'
-        publishHTML([
-          reportName: 'Cypress Report',
-          reportDir: 'reports/mochawesome',
-          reportFiles: 'cypress-report.html',
-          keepAll: true
-        ])
-
-        echo '📂 Publication du rapport Newman…'
-        publishHTML([
-          reportName: 'Newman Report',
-          reportDir: 'reports/newman',
-          reportFiles: 'newman-report.html',
-          keepAll: true
-        ])
+        echo 'Fusion et génération du rapport Cypress…'
+        // 1) merge JSON
+        bat 'npx mochawesome-merge reports\\mochawesome\\*.json --output reports\\mochawesome\\merged.json'
+        // 2) générer le HTML final
+        bat 'npx marge reports\\mochawesome\\merged.json --reportDir reports\\mochawesome\\html --reportFilename cypress-report.html'
       }
+    }
+  }
+
+  post {
+    always {
+      // Publication du rapport Cypress
+      publishHTML(target: [
+        reportDir   : 'reports/mochawesome/html',
+        reportFiles : 'cypress-report.html',
+        reportName  : 'Cypress Report',
+        keepAll      : true,
+        allowMissing: false
+      ])
+      // Publication du rapport Newman
+      publishHTML(target: [
+        reportDir   : 'reports/newman',
+        reportFiles : 'newman-report.html',
+        reportName  : 'Newman Report',
+        keepAll      : true,
+        allowMissing: false
+      ])
     }
   }
 }
