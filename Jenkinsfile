@@ -2,8 +2,8 @@ pipeline {
   agent any
 
   environment {
-    PATH         = "${env.PATH};C:\\Program Files\\nodejs"
-    REPORTS_DIR  = 'reports'
+    PATH        = "${env.PATH};C:\\Program Files\\nodejs"
+    REPORTS_DIR = 'reports'
   }
 
   options {
@@ -13,17 +13,18 @@ pipeline {
 
   stages {
     stage('Checkout') {
-      steps { checkout scm }
+      steps {
+        checkout scm
+      }
     }
 
     stage('Install dependencies') {
       steps {
         bat """
           npm ci
-          npm install --save-dev \
-            mochawesome mochawesome-merge mochawesome-report-generator \
-            k6-to-html
+          npm install --save-dev mochawesome mochawesome-merge mochawesome-report-generator
           npm install -g newman newman-reporter-html
+          npm install -g k6
         """
       }
     }
@@ -55,14 +56,10 @@ pipeline {
 
         stage('K6') {
           steps {
-            // On catchError pour ne pas faire sauter tout le pipeline si K6 plante
-            catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-              bat """
-                echo ---[ DEBUG: K6 ]---
-                if not exist ${REPORTS_DIR}\\k6 mkdir ${REPORTS_DIR}\\k6
-                k6 run test_k6.js --out json=${REPORTS_DIR}\\k6\\k6-result.json
-              """
-            }
+            bat """
+              echo ---[ DEBUG: K6 ]---
+              k6 run test_k6.js
+            """
           }
         }
       }
@@ -76,13 +73,6 @@ pipeline {
           npx marge ${REPORTS_DIR}\\mochawesome\\merged.json ^
             --reportDir ${REPORTS_DIR}\\mochawesome ^
             --reportFilename cypress-report.html
-
-          echo Génération du rapport K6 HTML si JSON présent…
-          if exist ${REPORTS_DIR}\\k6\\k6-result.json (
-            npx k6-to-html ${REPORTS_DIR}\\k6\\k6-result.json ${REPORTS_DIR}\\k6\\k6-report.html
-          ) else (
-            echo "[WARN] Fichier K6 JSON introuvable, skipping HTML generation."
-          )
         """
       }
     }
@@ -103,13 +93,8 @@ pipeline {
         reportFiles           : 'newman-report.html',
         alwaysLinkToLastBuild : true
       ]
-      publishHTML target: [
-        reportName            : 'K6 Report',
-        reportDir             : "${REPORTS_DIR}/k6",
-        reportFiles           : 'k6-report.html',
-        alwaysLinkToLastBuild : true
-      ]
     }
+
     failure {
       echo '❌ Un ou plusieurs tests ont échoué.'
     }
