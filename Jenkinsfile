@@ -9,18 +9,14 @@ pipeline {
         // … Cypress et Newman …
 
         stage('K6 (screenshot)') {
-          steps {
-            echo '--- RUN K6 (export + screenshot) ---'
-            // crée le dossier
-            bat 'if not exist reports\\k6 mkdir reports\\k6'
-            // 1) on exporte le résumé JSON
-            bat 'k6 run test_k6.js --summary-export=reports\\k6\\summary.json'
-            // 2) on génère le PNG
-            bat 'python generate_k6_screenshot.py reports\\k6\\summary.json reports\\k6\\screenshot.png'
-            // 3) on liste pour vérifier
-            bat 'dir reports\\k6'
-          }
-        }
+  steps {
+    bat 'if not exist reports\\k6 mkdir reports\\k6'
+    bat 'k6 run test_k6.js --summary-export=reports\\k6\\summary.json'
+    bat 'python generate_k6_screenshot.py reports\\k6\\summary.json reports\\k6\\screenshot.png'
+    bat 'dir reports\\k6'
+  }
+}
+
       }
     }
 
