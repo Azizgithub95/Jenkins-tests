@@ -100,7 +100,7 @@ pipeline {
       ]
     }
     failure {
-      echo '❌ Un ou plusieurs tests ont échoué.'
+      echo '❌ Un ou plusieur tests ont échoué.'
     }
   }
 }
