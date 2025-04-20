@@ -58,7 +58,7 @@ pipeline {
             }
         }
 
-        stage('Publish Reports & Screenshot') {
+        stage('Publish Report & Screenshot') {
             steps {
                 publishHTML([
                     reportDir             : 'reports/cypress',
