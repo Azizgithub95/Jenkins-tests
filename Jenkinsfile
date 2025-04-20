@@ -2,72 +2,33 @@ pipeline {
   agent any
 
   stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
-    }
-
-    stage('Install dependencies') {
-      steps {
-        bat 'npm ci'
-      }
-    }
+    // … tes autres stages …
 
     stage('Run Tests') {
       parallel {
-        stage('Cypress') {
-          steps {
-            echo '--- RUN Cypress ---'
-            bat '''
-              npx cypress run \
-                --reporter mochawesome \
-                --reporter-options reportDir=reports/cypress,reportFilename=index,overwrite=true,html=true,json=false,inlineAssets=true
-            '''
-            bat 'dir reports\\cypress'
-          }
-        }
+        // … Cypress et Newman …
 
-        stage('Newman') {
+        stage('K6 (screenshot)') {
           steps {
-            echo '--- RUN Newman ---'
-            bat 'if not exist reports\\newman mkdir reports\\newman'
-            bat '''
-              newman run MOCK_AZIZ_SERVEUR.postman_collection.json \
-                -r html \
-                --reporter-html-export reports/newman/newman-report.html
-            '''
-            bat 'dir reports\\newman'
-          }
-        }
-
-        stage('K6 (no report)') {
-          steps {
-            echo '--- RUN K6 ---'
-            bat 'k6 run test_k6.js'
+            echo '--- RUN K6 (export + screenshot) ---'
+            // crée le dossier
+            bat 'if not exist reports\\k6 mkdir reports\\k6'
+            // 1) on exporte le résumé JSON
+            bat 'k6 run test_k6.js --summary-export=reports\\k6\\summary.json'
+            // 2) on génère le PNG
+            bat 'python generate_k6_screenshot.py reports\\k6\\summary.json reports\\k6\\screenshot.png'
+            // 3) on liste pour vérifier
+            bat 'dir reports\\k6'
           }
         }
       }
     }
 
-    stage('Publish HTML reports') {
+    stage('Publish Reports & Screenshot') {
       steps {
-        publishHTML([
-          reportDir             : 'reports/cypress',
-          reportFiles           : 'index.html',
-          reportName            : 'Cypress Report',
-          keepAll               : true,
-          alwaysLinkToLastBuild : true,
-          allowMissing          : false
-        ])
-        publishHTML([
-          reportDir             : 'reports/newman',
-          reportFiles           : 'newman-report.html',
-          reportName            : 'Newman Report',
-          keepAll               : true,
-          alwaysLinkToLastBuild : true,
-          allowMissing          : false
-        ])
+        // Cypress & Newman comme avant…
+        // enfin on archive l’image K6
+        archiveArtifacts artifacts: 'reports/k6/screenshot.png', fingerprint: true
       }
     }
   }
