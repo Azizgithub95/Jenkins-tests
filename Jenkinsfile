@@ -2,29 +2,25 @@ pipeline {
   agent any
 
   environment {
-    // Chemin vers Node.js si besoin
-    PATH = "${env.PATH};C:\\Program Files\\nodejs"
-    REPORTS_DIR = 'reports'
+    PATH         = "${env.PATH};C:\\Program Files\\nodejs"
+    REPORTS_DIR  = 'reports'
   }
 
   options {
-    // Conserver les 20 derniers builds et afficher les timestamps
     buildDiscarder(logRotator(numToKeepStr: '20'))
     timestamps()
   }
 
   stages {
     stage('Checkout') {
-      steps {
-        checkout scm
-      }
+      steps { checkout scm }
     }
 
     stage('Install dependencies') {
       steps {
         bat """
           npm ci
-          npm install --save-dev mochawesome mochawesome-merge mochawesome-report-generator
+          npm install --save-dev mochawesome mochawesome-merge mochawesome-report-generator k6-to-html
           npm install -g newman newman-reporter-html
         """
       }
@@ -35,7 +31,7 @@ pipeline {
         stage('Cypress') {
           steps {
             bat """
-              echo ---[ DEBUG: Before Cypress ]---
+              echo ---[ DEBUG: Cypress ]---
               npx cypress run ^
                 --reporter mochawesome ^
                 --reporter-options reportDir=${REPORTS_DIR}\\mochawesome,overwrite=false,html=false,json=true
@@ -46,7 +42,7 @@ pipeline {
         stage('Newman') {
           steps {
             bat """
-              echo ---[ DEBUG: Before Newman ]---
+              echo ---[ DEBUG: Newman ]---
               if not exist ${REPORTS_DIR}\\newman mkdir ${REPORTS_DIR}\\newman
               newman run MOCK_AZIZ_SERVEUR.postman_collection.json ^
                 -r cli,html ^
@@ -58,8 +54,10 @@ pipeline {
         stage('K6') {
           steps {
             bat """
+              echo ---[ DEBUG: K6 ]---
               if not exist ${REPORTS_DIR}\\k6 mkdir ${REPORTS_DIR}\\k6
-              k6 run test_k6.js --out json=${REPORTS_DIR}\\k6\\k6-result.json
+              # Génère directement le HTML via l’option html native
+              k6 run test_k6.js --out html=${REPORTS_DIR}\\k6\\k6-report.html
             """
           }
         }
@@ -69,14 +67,11 @@ pipeline {
     stage('Generate Reports') {
       steps {
         bat """
-          echo Fusion des rapports JSON Cypress et génération HTML...
-          npx mochawesome-merge ${REPORTS_DIR}/mochawesome/*.json --output ${REPORTS_DIR}/mochawesome/merged.json
-          npx marge ${REPORTS_DIR}/mochawesome/merged.json ^
-            --reportDir ${REPORTS_DIR}/mochawesome ^
+          echo Fusion et génération du rapport Cypress…
+          npx mochawesome-merge ${REPORTS_DIR}\\mochawesome\\*.json --output ${REPORTS_DIR}\\mochawesome\\merged.json
+          npx marge ${REPORTS_DIR}\\mochawesome\\merged.json ^
+            --reportDir ${REPORTS_DIR}\\mochawesome ^
             --reportFilename cypress-report.html
-
-          echo Génération du rapport K6 HTML (si k6-to-html installé)...
-          npx k6-to-html ${REPORTS_DIR}/k6/k6-result.json ${REPORTS_DIR}/k6/k6-report.html || echo "k6-to-html non installé"
         """
       }
     }
@@ -84,32 +79,28 @@ pipeline {
 
   post {
     always {
-      echo '📂 Publication des rapports HTML...'
-
+      echo '📂 Publication des rapports HTML…'
       publishHTML target: [
-        reportName         : 'Cypress Report',
-        reportDir          : "${REPORTS_DIR}/mochawesome",
-        reportFiles        : 'cypress-report.html',
-        alwaysLinkToLastBuild: true
+        reportName            : 'Cypress Report',
+        reportDir             : "${REPORTS_DIR}/mochawesome",
+        reportFiles           : 'cypress-report.html',
+        alwaysLinkToLastBuild : true
       ]
-
       publishHTML target: [
-        reportName         : 'Newman Report',
-        reportDir          : "${REPORTS_DIR}/newman",
-        reportFiles        : 'newman-report.html',
-        alwaysLinkToLastBuild: true
+        reportName            : 'Newman Report',
+        reportDir             : "${REPORTS_DIR}/newman",
+        reportFiles           : 'newman-report.html',
+        alwaysLinkToLastBuild : true
       ]
-
       publishHTML target: [
-        reportName         : 'K6 Report',
-        reportDir          : "${REPORTS_DIR}/k6",
-        reportFiles        : 'k6-report.html',
-        alwaysLinkToLastBuild: true
+        reportName            : 'K6 Report',
+        reportDir             : "${REPORTS_DIR}/k6",
+        reportFiles           : 'k6-report.html',
+        alwaysLinkToLastBuild : true
       ]
     }
-
     failure {
-      echo '❌ Un ou plusieur tests ont échoué.'
+      echo '❌ Un ou plusieurs tests ont échoué.'
     }
   }
 }
