@@ -48,6 +48,18 @@ pipeline {
     post {
         always {
             echo 'Tests exécutés. Vérifie les rapports dans le dossier reports/.'
+            publishHTML (target: [
+                reportName: 'Cypress Report',
+                reportDir: 'reports/mochawesome',
+                reportFiles: 'cypress-report.html',
+                alwaysLinkToLastBuild: true
+            ])
+            publishHTML (target: [
+                reportName: 'Newman Report',
+                reportDir: 'reports/newman',
+                reportFiles: 'report.html',
+                alwaysLinkToLastBuild: true
+            ])
         }
     }
 }
