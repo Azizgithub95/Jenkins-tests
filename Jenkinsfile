@@ -74,7 +74,7 @@ pipeline {
 
     post {
         always {
-            echo 'Tests exécutés. Vérifie les rapports dans le dossier reports/.'
+            echo 'Tests exécutés Vérifie les rapports dans le dossier reports/.'
         }
     }
 }
