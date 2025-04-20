@@ -19,12 +19,19 @@ pipeline {
         stage('Cypress') {
           steps {
             echo '--- RUN Cypress ---'
+            // on génère un seul index.html avec assets inline
             bat """
               npx cypress run ^
                 --reporter mochawesome ^
-                --reporter-options reportDir=reports\\\\cypress,reportFilename=cypress-report,overwrite=false,html=true,json=false
+                --reporter-options ^
+reportDir=reports\\\\cypress,^
+reportFilename=index,^
+overwrite=true,^
+html=true,^
+json=false,^
+inlineAssets=true
             """
-            // Affiche le contenu du dossier pour s'assurer que le HTML est là
+            // vérifions bien qu'on a index.html
             bat 'dir reports\\\\cypress'
           }
         }
@@ -44,30 +51,32 @@ pipeline {
 
         stage('K6 (no report)') {
           steps {
-            echo '--- RUN K6 (no report) ---'
+            echo '--- RUN K6 ---'
             bat 'k6 run test_k6.js'
           }
         }
       }
     }
 
-    stage('Publish Reports') {
+    stage('Publish HTML reports') {
       steps {
+        // Cypress → on pointe sur index.html
         publishHTML([
-          reportDir              : 'reports/cypress',
-          reportFiles            : 'cypress-report.html',
-          reportName             : 'Cypress Report',
-          keepAll                : true,
-          alwaysLinkToLastBuild  : true,
-          allowMissing           : false
+          reportDir             : 'reports/cypress',
+          reportFiles           : 'index.html',
+          reportName            : 'Cypress Report',
+          keepAll               : true,
+          alwaysLinkToLastBuild : true,
+          allowMissing          : false
         ])
+        // Newman
         publishHTML([
-          reportDir              : 'reports/newman',
-          reportFiles            : 'newman-report.html',
-          reportName             : 'Newman Report',
-          keepAll                : true,
-          alwaysLinkToLastBuild  : true,
-          allowMissing           : false
+          reportDir             : 'reports/newman',
+          reportFiles           : 'newman-report.html',
+          reportName            : 'Newman Report',
+          keepAll               : true,
+          alwaysLinkToLastBuild : true,
+          allowMissing          : false
         ])
       }
     }
