@@ -1,6 +1,12 @@
 pipeline { 
   agent any
 
+    triggers {
+    cron('0 9 * * *')
+    cron('0 21 * * *')
+  }
+  
+
   stages {
     stage('Checkout') {
       steps {
@@ -90,6 +96,23 @@ reportDir=reports\\\\cypress,reportFilename=index,overwrite=true,html=true,json=
     always {
       echo 'Build terminé.'
     }
+  
+
+
+    success {
+      emailext subject: "Build Success: ${currentBuild.fullDisplayName}",
+                body: "Le build ${currentBuild.fullDisplayName} a réussi.\n\nConsultez les détails ici : ${env.BUILD_URL}",
+                to: 'ton.adresse@mail.com'
+    }
+    failure {
+      emailext subject: "Build Failed: ${currentBuild.fullDisplayName}",
+                body: "Le build ${currentBuild.fullDisplayName} a échoué.\n\nConsultez les détails ici : ${env.BUILD_URL}",
+                to: 'aziztesteur@hotmail.com'
+    }
   }
 }
+
+
+
+
 
