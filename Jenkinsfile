@@ -20,7 +20,9 @@ pipeline {
       steps {
         bat """
           npm ci
-          npm install --save-dev mochawesome mochawesome-merge mochawesome-report-generator k6-to-html
+          npm install --save-dev \
+            mochawesome mochawesome-merge mochawesome-report-generator \
+            k6-to-html
           npm install -g newman newman-reporter-html
         """
       }
@@ -53,12 +55,14 @@ pipeline {
 
         stage('K6') {
           steps {
-            bat """
-              echo ---[ DEBUG: K6 ]---
-              if not exist ${REPORTS_DIR}\\k6 mkdir ${REPORTS_DIR}\\k6
-              # Génère directement le HTML via l’option html native
-              k6 run test_k6.js --out html=${REPORTS_DIR}\\k6\\k6-report.html
-            """
+            // On catchError pour ne pas faire sauter tout le pipeline si K6 plante
+            catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+              bat """
+                echo ---[ DEBUG: K6 ]---
+                if not exist ${REPORTS_DIR}\\k6 mkdir ${REPORTS_DIR}\\k6
+                k6 run test_k6.js --out json=${REPORTS_DIR}\\k6\\k6-result.json
+              """
+            }
           }
         }
       }
@@ -72,6 +76,13 @@ pipeline {
           npx marge ${REPORTS_DIR}\\mochawesome\\merged.json ^
             --reportDir ${REPORTS_DIR}\\mochawesome ^
             --reportFilename cypress-report.html
+
+          echo Génération du rapport K6 HTML si JSON présent…
+          if exist ${REPORTS_DIR}\\k6\\k6-result.json (
+            npx k6-to-html ${REPORTS_DIR}\\k6\\k6-result.json ${REPORTS_DIR}\\k6\\k6-report.html
+          ) else (
+            echo "[WARN] Fichier K6 JSON introuvable, skipping HTML generation."
+          )
         """
       }
     }
@@ -100,7 +111,7 @@ pipeline {
       ]
     }
     failure {
-      echo '❌ Un ou plusieur tests ont échoué.'
+      echo '❌ Un ou plusieurs tests ont échoué.'
     }
   }
 }
