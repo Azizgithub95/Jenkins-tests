@@ -4,6 +4,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
+        // récupère ton repo
         checkout scm
       }
     }
@@ -19,12 +20,12 @@ pipeline {
         stage('Cypress') {
           steps {
             echo '--- RUN Cypress ---'
-            // on génère juste l’HTML avec mochawesome
-            bat '''
+            // on génère un HTML unique nommé cypress-report.html
+            bat """
               npx cypress run ^
                 --reporter mochawesome ^
-                --reporter-options reportDir=reports/mochawesome,overwrite=false,html=true,json=false
-            '''
+                --reporter-options reportDir=reports\\cypress,reportFilename=cypress-report,overwrite=false,html=true,json=false
+            """
           }
         }
 
@@ -32,7 +33,8 @@ pipeline {
           steps {
             echo '--- RUN Newman ---'
             bat 'if not exist reports\\newman mkdir reports\\newman'
-            bat 'newman run MOCK_AZIZ_SERVEUR.postman_collection.json -r cli,html --reporter-html-export reports\\newman\\newman-report.html'
+            // reporter HTML natif
+            bat 'newman run MOCK_AZIZ_SERVEUR.postman_collection.json -r html --reporter-html-export reports\\newman\\newman-report.html'
           }
         }
 
@@ -49,21 +51,21 @@ pipeline {
   post {
     always {
       // publication du rapport Cypress
-      publishHTML(target: [
-        reportDir   : 'reports/mochawesome',
-        reportFiles : 'mochawesome.html',
+      publishHTML target: [
+        reportDir   : 'reports\\cypress',
+        reportFiles : 'cypress-report.html',
         reportName  : 'Cypress Report',
         keepAll     : true,
         allowMissing: false
-      ])
+      ]
       // publication du rapport Newman
-      publishHTML(target: [
-        reportDir   : 'reports/newman',
+      publishHTML target: [
+        reportDir   : 'reports\\newman',
         reportFiles : 'newman-report.html',
         reportName  : 'Newman Report',
         keepAll     : true,
         allowMissing: false
-      ])
+      ]
     }
   }
 }
